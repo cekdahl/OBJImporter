@@ -2,7 +2,7 @@
 # OBJImporter
 A Wolfram Language importer for OBJ (.obj) files that preserve texture and color information. Wolfram Language has the ability to import OBJ files built in, using `Import`, but it discards color information and textures:
 
-<img src="https://mmase.s3.amazonaws.com/yoshiWithoutStyling.png" alt="Yoshi with colors and textures" />
+<img src="https://imgur.com/kVGwDmh" alt="Yoshi with colors and textures" />
 
 OBJImporter adds a new file format setting to `Import` called `RawOBJ` which keeps the color and texture information instead of discarding it:
 
