@@ -13,3 +13,5 @@ OBJImporter adds a new file format setting to `Import` called `RawOBJ` which kee
 
     Needs["PacletManager`"]
     PacletInstall["~/Downloads/OBJImporter-1.0.0.paclet"]
+## Disclaimer
+`OBJImporter` supports a subset of the OBJ file format. As a consequence, some models may not look exactly the way they do in other 3D programs. The important thing though is that it keeps information about the color of the surfaces and their textures, which is all that is needed for many models.
