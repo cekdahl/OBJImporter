@@ -126,7 +126,7 @@ parseFaceNormals[faceNormals_, _] := faceNormals
 
 findMTLFile[accepted_, candidate_] := If[
   StringMatchQ[candidate, "mtllib" ~~ Whitespace ~~ __],
-  StringExtract[candidate, 2],
+  StringRiffle@StringExtract[candidate, 2;;],
   accepted
 ]
 findMTLFile[obj_] := Fold[findMTLFile, None, obj]
@@ -146,25 +146,43 @@ buildStyleDirective[mtlspecs_, dir_] := Directive[
   ]
 ]
 
-buildPolygon[indices_, vertexCoordinatesList_, textureCoordinatesList_, faceNormalsList_] := Module[
-  {vertexIndices, textureIndices, faceNormalsIndices},
-  {vertexIndices, textureIndices, faceNormalsIndices} = Transpose[indices];
-  Polygon[
+buildPolygon[faceList_, vertexCoordinatesList_, textureCoordinatesList_, faceNormalsList_] := Module[
+  {indices, uniqueIndices, vertexIndices, textureIndices, faceNormalsIndices, gcIndices, rules, gc},
+  indices = Flatten[faceList, 1];
+  uniqueIndices = DeleteDuplicates[indices];
+  {vertexIndices, textureIndices, faceNormalsIndices} = DeleteCases[0] /@ Transpose[uniqueIndices];
+  rules = Thread[uniqueIndices -> Range@Length@uniqueIndices];
+  gc = GraphicsComplex[
     vertexCoordinatesList[[vertexIndices]],
-    VertexTextureCoordinates -> DeleteCases[textureCoordinatesList[[textureIndices~DeleteCases~0]], {0 ..}],
-    VertexNormals -> faceNormalsList[[faceNormalsIndices~DeleteCases~0]]
-  ]
+    Polygon[faceList /. rules]
+  ];
+  If[
+    Length[textureIndices] > 0,
+    AppendTo[gc, VertexTextureCoordinates -> textureCoordinatesList[[textureIndices]]]
+  ];
+  If[
+    Length[faceNormalsIndices] > 0,
+    AppendTo[gc, VertexNormals -> faceNormalsList[[faceNormalsIndices ]]]
+  ];
+  gc
 ]
 
-buildObject[spec_, mtlspecs_, dir_, vertexCoordinatesList_, textureCoordinatesList_, faceNormalsList_] := {
-  buildStyleDirective[SelectFirst[mtlspecs, #Name == spec["Material"] &], dir],
-  buildPolygon[#, vertexCoordinatesList, textureCoordinatesList, faceNormalsList] & /@ spec["FaceList"]
-}
+buildObject[spec_, mtlspecs_, dir_, vertexCoordinatesList_, textureCoordinatesList_, faceNormalsList_] := Module[{},
+  selectedSpecs = SelectFirst[mtlspecs, #Name == spec["Material"] &];
+  If[
+    MatchQ[selectedSpecs, _Missing],
+    Message[Import::mtlspecnf, spec["Material"]], {
+      buildStyleDirective[selectedSpecs, dir],
+      buildPolygon[spec["FaceList"], vertexCoordinatesList, textureCoordinatesList, faceNormalsList]
+    }
+  ]
+]
 
 (*--------------------- Register importer ---------------------*)
 
 Import::mtlnf = "MTL file `1` not found during Import.";
 Import::texturenf = "Texture file `1` not found during Import.";
+Import::mtlspecnf = "Material `1` is undefined.";
 
 importOBJ[file_] := Module[
   {obj, dir, mtlSpecs, mtlFile, mtls, textures,
@@ -184,7 +202,7 @@ importOBJ[file_] := Module[
   dir = FileNameDrop[file, -1] <> "/";
 
   mtlFile = findMTLFile[obj];
-  If[!FileExistsQ[dir <> mtlFile], Message[Import::mtlinf, mtlFile]];
+  If[!FileExistsQ[dir <> mtlFile], Message[Import::mtlnf, mtlFile]; Return[$Failed]];
 
   mtlSpecs = {materialDefaults};
   If[
@@ -214,7 +232,7 @@ importOBJ[file_] := Module[
     Fold[parseFaceList, {}, obj]
   ];
 
-  Graphics3D[{EdgeForm[], primitives}]
+  Graphics3D[{EdgeForm[], primitives}, Boxed -> False]
 ];
 
 ImportExport`RegisterImport["RawOBJ", importOBJ]
