@@ -1,4 +1,4 @@
-﻿# OBJImporter
+# OBJImporter
 `OBJImporter` is a Wolfram Language `Import` extension for OBJ (.obj) files that preserves texture and color information. `Import` has the ability to import OBJ files but it discards color information and textures:
 
 <img src="https://i.imgur.com/pFXEBRe.png" alt="Yoshi with colors and textures" />
